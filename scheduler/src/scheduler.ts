@@ -8,6 +8,7 @@ const CRON_SCHEDULE = process.env.CRON_SCHEDULE || '0 * * * *';  // 기본값: �
 async function runScheduledTasks() {
   try {
     console.log('Starting crawler...');
+    console.log('CRON_SCHEDULE is', CRON_SCHEDULE);
     // Crawler 실행
     await axios.post(CRAWLER_URL);
     console.log('Crawler finished');

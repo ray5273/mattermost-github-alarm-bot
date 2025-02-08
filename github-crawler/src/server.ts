@@ -1,5 +1,5 @@
 import express from 'express';
-import GithubCrawler from './githubCrawler.ts';
+import GithubCrawler from './githubCrawler';
 
 const app = express();
 app.use(express.json());

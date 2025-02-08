@@ -56,6 +56,8 @@ services:
         condition: service_started
       mattermost-notifier:
         condition: service_started
+    environment:
+      - CRON_SCHEDULE=${CRON_SCHEDULE}
 
   github-crawler:
     container_name: github-crawler
