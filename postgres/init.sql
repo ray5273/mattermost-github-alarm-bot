@@ -11,31 +11,42 @@ CREATE TABLE IF NOT EXISTS github_repositories (
 -- PR 이벤트를 저장하는 테이블
 CREATE TABLE IF NOT EXISTS pr_events (
     id SERIAL PRIMARY KEY,
-    pr_id INTEGER NOT NULL,
-    type VARCHAR(20) NOT NULL, -- 'created', 'updated', 'merged' 중 하나
+    pr_id BIGINT NOT NULL,
+    type VARCHAR(20) NOT NULL, -- 'created', 'updated', 'merged', 'author_comment' 중 하나
+    update_type VARCHAR(20), -- 'code', 'comment' 중 하나
     title TEXT NOT NULL,
     url TEXT NOT NULL,
     created_at TIMESTAMP,
     updated_at TIMESTAMP,
     merged_at TIMESTAMP,
-    notified BOOLEAN DEFAULT false
+    notified BOOLEAN DEFAULT false,
+    commit_hash VARCHAR(40),
+    comment_id BIGINT,
+    author VARCHAR(100),
+    UNIQUE(pr_id, type, comment_id)
 );
 
 -- PR 리뷰 정보를 저장하는 테이블
 CREATE TABLE IF NOT EXISTS pr_reviews (
     id SERIAL PRIMARY KEY,
-    review_id INTEGER NOT NULL,
-    pr_id INTEGER NOT NULL,
+    review_id BIGINT NOT NULL,
+    pr_id BIGINT NOT NULL,
     state VARCHAR(20) NOT NULL, -- 'approved', 'changes_requested', 'commented' 등
     reviewer VARCHAR(100) NOT NULL,
     submitted_at TIMESTAMP NOT NULL,
-    notified BOOLEAN DEFAULT false
+    notified BOOLEAN DEFAULT false,
+    is_author BOOLEAN DEFAULT FALSE,
+    pr_title TEXT NOT NULL,
+    review_url TEXT NOT NULL,
+    author VARCHAR(100) NOT NULL
 );
+
+
 
 -- 빌드 이벤트를 저장하는 테이블
 CREATE TABLE IF NOT EXISTS github_action_events (
     id SERIAL PRIMARY KEY,
-    run_id INTEGER NOT NULL,
+    run_id BIGINT NOT NULL,
     status VARCHAR(20) NOT NULL,
     workflow_name TEXT NOT NULL,
     html_url TEXT NOT NULL,
@@ -43,6 +54,7 @@ CREATE TABLE IF NOT EXISTS github_action_events (
     notified BOOLEAN DEFAULT false
 );
 -- 사용자 정보를 저장하는 테이블
+
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     github_id VARCHAR(100) NOT NULL UNIQUE,
@@ -78,3 +90,11 @@ CREATE INDEX IF NOT EXISTS idx_users_team_name ON users(team_name);
 -- 중복 데이터 방지를 위한 유니크 제약조건
 ALTER TABLE pr_reviews ADD CONSTRAINT unique_review_id UNIQUE (review_id);
 ALTER TABLE github_action_events ADD CONSTRAINT unique_run_id UNIQUE (run_id); 
+
+-- 초기 레포지토리 데이터 추가
+INSERT INTO github_repositories (owner, repo) 
+VALUES ('ray5273', 'mattermost-github-alarm-bot')
+ON CONFLICT (owner, repo) DO NOTHING;
+INSERT INTO github_repositories (owner, repo)
+VALUES ('ray5273', 'docusaurus-template')
+ON CONFLICT (owner, repo) DO NOTHING;

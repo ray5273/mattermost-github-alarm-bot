@@ -5,22 +5,25 @@ const CRAWLER_URL = 'http://github-crawler:3000/api/crawl';
 const NOTIFIER_URL = 'http://mattermost-notifier:3001/api/notify';
 const CRON_SCHEDULE = process.env.CRON_SCHEDULE || '0 * * * *';  // 기본값: 매일 오전 11시
 
+
 async function runScheduledTasks() {
   try {
-    console.log('Starting crawler...');
-    console.log('CRON_SCHEDULE is', CRON_SCHEDULE);
+    console.log(`[${new Date().toISOString()}] Starting crawler...`);
+    console.log(`[${new Date().toISOString()}] CRON_SCHEDULE is`, CRON_SCHEDULE);
     // Crawler 실행
     await axios.post(CRAWLER_URL);
-    console.log('Crawler finished');
+    console.log(`[${new Date().toISOString()}] Crawler finished`);
 
-    console.log('Starting notifier...');
+    console.log(`[${new Date().toISOString()}] Starting notifier...`);
     // Crawler 완료 후 Notifier 실행
     await axios.post(NOTIFIER_URL);
-    console.log('Notifier finished');
+    console.log(`[${new Date().toISOString()}] Notifier finished`);
+
   } catch (error) {
-    console.error('Error in scheduled tasks:', error);
+    console.error(`[${new Date().toISOString()}] Error in scheduled tasks:`, error);
   }
 }
+
 
 // 매 시간마다 실행 (원하는 주기로 수정 가능)
 cron.schedule(CRON_SCHEDULE, runScheduledTasks);
