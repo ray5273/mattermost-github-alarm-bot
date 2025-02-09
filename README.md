@@ -1,4 +1,8 @@
-# mattermost github alarm bot
+# Mattermost github alarm bot
+
+## Prerequisites
+- docker
+- docker-compose
 
 ## 환경 설정
 
