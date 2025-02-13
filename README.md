@@ -15,7 +15,8 @@ POSTGRES_DB=postgres
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432 
 GITHUB_TOKEN=your_github_token
-MATTERMOST_WEBHOOK_URL=your_webhook_url
+MATTERMOST_BOT_TOKEN=your_mattermost_bot_token
+MATTERMOST_SERVER_URL=http://your_mattermost_server
 JWT_SECRET=your_jwt_secret
 CRON_SCHEDULE='* * * * *'  # 매 1분 
 ```
