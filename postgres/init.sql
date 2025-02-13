@@ -98,3 +98,18 @@ ON CONFLICT (owner, repo) DO NOTHING;
 INSERT INTO github_repositories (owner, repo)
 VALUES ('ray5273', 'docusaurus-template')
 ON CONFLICT (owner, repo) DO NOTHING;
+
+-- Mattermost 채널 정보를 저장하는 테이블
+CREATE TABLE IF NOT EXISTS mattermost_channels (
+    id SERIAL PRIMARY KEY,
+    channel_id VARCHAR(100) NOT NULL,
+    team_name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    active BOOLEAN DEFAULT true,
+    UNIQUE(channel_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_mattermost_channels_team_name ON mattermost_channels(team_name);
+
+INSERT INTO mattermost_channels (channel_id, team_name) 
+VALUES ('e5mz14djfif18rftxfshgdy8xr', 'firstteam');

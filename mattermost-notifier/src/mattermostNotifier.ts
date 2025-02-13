@@ -2,11 +2,11 @@ import axios from 'axios';
 import pool from './db'
 
 class MattermostNotifier {
-  private webhookUrl: string;
+  private botToken: string;
   private pool: any;
 
-  constructor(webhookUrl: string) {
-    this.webhookUrl = webhookUrl;
+  constructor(botToken: string) {
+    this.botToken = botToken;
     this.pool = pool;
   }
   
@@ -152,10 +152,33 @@ class MattermostNotifier {
     }
   }
 
+  private async getActiveChannels(): Promise<string[]> {
+    const query = `
+      SELECT channel_id 
+      FROM mattermost_channels 
+      WHERE active = true
+    `;
+    const { rows } = await this.pool.query(query);
+    return rows.map((row: { channel_id: string }) => row.channel_id);
+  }
+
   private async sendMattermostMessage(message: { text: string }) {
     console.log(`[${this.getKSTTime()}] sendMattermostMessage 시작`);
     try {
-      await axios.post(this.webhookUrl, message);
+      const channels = await this.getActiveChannels();
+      
+      for (const channelId of channels) {
+        await axios.post(`${process.env.MATTERMOST_SERVER_URL}/api/v4/posts`, {
+          channel_id: channelId,
+          message: message.text
+        }, {
+          headers: {
+            'Authorization': `Bearer ${this.botToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        console.log(`[${this.getKSTTime()}] 채널 ${channelId}에 메시지 전송 완료`);
+      }
     } catch (error) {
       console.log(`[${this.getKSTTime()}] Mattermost 메시지 전송 실패:`, error);
     }
