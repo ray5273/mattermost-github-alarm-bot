@@ -109,7 +109,7 @@ class GithubCrawler {
         since: since.toISOString()
       });
       
-      console.log(`[${this.getKSTTime()}] [monitorPullRequests] PR ${pullRequests.length}개 조회됨`);
+      console.log(`[${this.getKSTTime()}] [monitorPullRequests] PR ${pullRequests.length}개 조회됨, since: ${since}`);
 
       for (const pr of pullRequests) {
         // PR 생성 이벤트 처리
@@ -136,33 +136,19 @@ class GithubCrawler {
   async monitorWorkflowRuns(owner: string, repo: string, since: Date) {
     console.log(`[${this.getKSTTime()}] [monitorWorkflowRuns] 시작 - ${owner}/${repo}`);
     try {
-      // 워크플로우 실행 목록 조회, 24시간 전부터 조회
       const { data: workflows } = await this.octokit.actions.listWorkflowRunsForRepo({
         owner,
         repo,
         created: `>=${new Date(since.getTime() - 24 * 60 * 60 * 1000).toISOString()}`
       });
       
-      console.log(`[${this.getKSTTime()}] [monitorWorkflowRuns] ${workflows.workflow_runs.length}개의 워크플로우 발견`);
-
       for (const run of workflows.workflow_runs) {
-        // 워크플로우가 아직 진행 중인지 확인
-        if (run.status === 'in_progress' || run.status === 'queued' || run.status === 'waiting') {
-          console.log(`[${this.getKSTTime()}] [monitorWorkflowRuns] 워크플로우 #${run.id}가 아직 진행 중 (${run.status})`);
-          continue;
-        }
-
-        // 워크플로우 결과에 따른 처리
-        if (run.conclusion === 'failure' || run.conclusion === 'cancelled' || run.conclusion === 'timed_out') {
+        if (run.conclusion === 'failure') {
           await this.handleGithubActionFailed(run);
-        } else {
-          console.log(`[${this.getKSTTime()}] [monitorWorkflowRuns] 워크플로우 #${run.id} ${run.conclusion}`);
         }
       }
-
     } catch (error) {
-      console.log(`[${this.getKSTTime()}] [monitorWorkflowRuns] 에러 발생: ${error}`);
-      throw error;
+      console.error(`[${this.getKSTTime()}] [monitorWorkflowRuns] 에러 발생:`, error);
     }
   }
 

@@ -51,11 +51,31 @@ class MattermostNotifier {
     const { rows } = await this.pool.query(query);
     
     for (const pr of rows) {
-      await this.sendMattermostMessage({
-        text: `🆕 새로운 PR이 생성되었습니다!\n작성자: ${pr.author}\n제목: ${pr.title}\n시간: ${this.formatDateTime(pr.created_at)}\n링크: ${pr.url}`
-      });
-      
-      await this.markAsNotified('pr_events', pr.id);
+        const message = `🆕 새로운 PR이 생성되었습니다!`;
+        const fields = [
+            {
+                title: "제목",
+                value: pr.title,
+                short: false
+            },
+            {
+                title: "작성자",
+                value: pr.author,
+                short: true
+            },
+            {
+                title: "시간",
+                value: this.formatDateTime(pr.created_at),
+                short: true
+            },
+            {
+                title: "링크",
+                value: pr.url,
+                short: false
+            }
+        ];
+        await this.sendMattermostMessage({ text: message, fields });
+        await this.markAsNotified('pr_events', pr.id);
     }
   }
 
@@ -69,18 +89,40 @@ class MattermostNotifier {
     const { rows } = await this.pool.query(query);
     
     for (const pr of rows) {
-      let message = '';
-      if (pr.update_type === 'code' && pr.notified === false) {
-        message = `📝 PR 코드가 업데이트되었습니다!\n작성자: ${pr.author}\n제목: ${pr.title}\n시간: ${this.formatDateTime(pr.updated_at)}\n링크: ${pr.url}`;
-      } else if (pr.update_type === 'comment' && pr.notified === false) {
-        message = `💬 PR 작성자가 코멘트를 남겼습니다!\n작성자: ${pr.author}\n제목: ${pr.title}\n시간: ${this.formatDateTime(pr.updated_at)}\n링크: ${pr.url}`;
-      } else if (pr.notified === false) {
-        message = `📝 PR이 업데이트되었습니다!\n작성자: ${pr.author}\n제목: ${pr.title}\n시간: ${this.formatDateTime(pr.updated_at)}\n링크: ${pr.url}`;
-      } else {
-        continue;
-      }
-      await this.sendMattermostMessage({ text: message });
-      await this.markAsNotified('pr_events', pr.id);
+        let message = '';
+        if (pr.update_type === 'code' && pr.notified === false) {
+          message = `📝 PR 코드가 업데이트되었습니다!`;
+        } else if (pr.update_type === 'comment' && pr.notified === false) {
+          message = `💬 PR 작성자가 코멘트를 남겼습니다!`;
+        } else if (pr.notified === false) {
+          message = `📝 PR이 업데이트되었습니다!`; // 살짝 중복 냄새남
+        } else {
+          continue;
+        }
+        const fields = [  
+            {
+                title: "제목",
+                value: pr.title,
+                short: false
+            },
+            {
+                title: "작성자",
+                value: pr.author,
+                short: true
+            },
+            {
+                title: "시간",
+                value: this.formatDateTime(pr.updated_at),
+                short: true
+            },
+            {
+                title: "링크",
+                value: pr.url,
+                short: false
+            }
+        ];
+        await this.sendMattermostMessage({ text: message, fields });
+        await this.markAsNotified('pr_events', pr.id);
     }
   }
 
@@ -94,25 +136,55 @@ class MattermostNotifier {
     console.log(`[${this.getKSTTime()}] notifyPRReviews ${rows.length}개의 리뷰 발견`);
     
     for (const review of rows) {
-      let emoji = '❔';
-      let status = '알 수 없음';
-      
-      if (review.state.toLowerCase() === 'approved') {
-        emoji = '✅';
-        status = 'APPROVED';
-      } else if (review.state.toLowerCase() === 'changes_requested') {
-        emoji = '❌';
-        status = 'CHANGES REQUESTED';
-      } else if (review.state.toLowerCase() === 'commented') {
-        emoji = '💭';
-        status = 'COMMENTED';
-      }
-      
-      await this.sendMattermostMessage({
-        text: `👀 PR 리뷰가 등록되었습니다!\n상태: ${emoji} ${status}\n리뷰어: ${review.reviewer}\n시간: ${this.formatDateTime(review.submitted_at)}\n\nPR 제목: ${review.pr_title}\nPR 작성자: ${review.author}\n링크: ${review.review_url}`
-      });
-      
-      await this.markAsNotified('pr_reviews', review.id);
+        let emoji = '❔';
+        let status = '알 수 없음';
+        
+        if (review.state.toLowerCase() === 'approved') {
+            emoji = '✅';
+            status = 'APPROVED';
+        } else if (review.state.toLowerCase() === 'changes_requested') {
+            emoji = '❌';
+            status = 'CHANGES REQUESTED';
+        } else if (review.state.toLowerCase() === 'commented') {
+            emoji = '💭';
+            status = 'COMMENTED';
+        }
+        
+        const message = `👀 PR 리뷰가 등록되었습니다! `;
+        const fields = [
+            {
+                title: "리뷰 상태",
+                value: `${emoji} ${status}`,
+                short: true
+            },
+            {
+                title: "리뷰어",
+                value: review.reviewer,
+                short: true
+            },
+            {
+                title: "시간",
+                value: this.formatDateTime(review.submitted_at),
+                short: true
+            },
+            {
+                title: "PR 제목",
+                value: review.pr_title,
+                short: false
+            },
+            {
+                title: "PR 작성자",
+                value: review.author,
+                short: true
+            },
+            {
+                title: "링크",
+                value: review.review_url,
+                short: false
+            }
+        ];
+        await this.sendMattermostMessage({ text: message, fields });
+        await this.markAsNotified('pr_reviews', review.id);
     }
   }
 
@@ -126,11 +198,31 @@ class MattermostNotifier {
     const { rows } = await this.pool.query(query);
     
     for (const pr of rows) {
-      await this.sendMattermostMessage({
-        text: `🎉 PR이 머지되었습니다!\n작성자: ${pr.author}\n제목: ${pr.title}\n시간: ${this.formatDateTime(pr.merged_at || pr.updated_at)}\n링크: ${pr.url}`
-      });
-      
-      await this.markAsNotified('pr_events', pr.id);
+        const message = `🎉 PR이 머지되었습니다!`;
+        const fields = [
+            {
+                title: "제목",
+                value: pr.title,
+                short: true
+            },
+            {
+                title: "작성자",
+                value: pr.author,
+                short: true
+            },
+            {
+                title: "시간",
+                value: this.formatDateTime(pr.merged_at || pr.updated_at),
+                short: true
+            },
+            {
+                title: "링크",
+                value: pr.url,
+                short: false
+            }
+        ];
+        await this.sendMattermostMessage({ text: message, fields });
+        await this.markAsNotified('pr_events', pr.id);
     }
   }
 
@@ -144,11 +236,26 @@ class MattermostNotifier {
     const { rows } = await this.pool.query(query);
     
     for (const ghActions of rows) {
-      await this.sendMattermostMessage({
-        text: `❌ CI/CD 실패!\n워크플로우: ${ghActions.workflow_name}\n시간: ${this.formatDateTime(ghActions.failed_at)}\n링크: ${ghActions.html_url}`
-      });
-      
-      await this.markAsNotified('github_action_events', ghActions.id);
+        const message = `❌ CI/CD 실패!`;
+        const fields = [
+            {
+                title: "워크플로우",
+                value: ghActions.workflow_name,
+                short: true
+            },
+            {
+                title: "시간",
+                value: this.formatDateTime(ghActions.failed_at),
+                short: true
+            },
+            {
+                title: "링크",
+                value: ghActions.html_url,
+                short: false
+            }
+        ];
+        await this.sendMattermostMessage({ text: message, fields });
+        await this.markAsNotified('github_action_events', ghActions.id);
     }
   }
 
@@ -162,25 +269,35 @@ class MattermostNotifier {
     return rows.map((row: { channel_id: string }) => row.channel_id);
   }
 
-  private async sendMattermostMessage(message: { text: string }) {
+  private async sendMattermostMessage(message: { text: string; fields: Array<{ title: string; value: string; short: boolean }> }) {
     console.log(`[${this.getKSTTime()}] sendMattermostMessage 시작`);
     try {
-      const channels = await this.getActiveChannels();
-      
-      for (const channelId of channels) {
-        await axios.post(`${process.env.MATTERMOST_SERVER_URL}/api/v4/posts`, {
-          channel_id: channelId,
-          message: message.text
-        }, {
-          headers: {
-            'Authorization': `Bearer ${this.botToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        console.log(`[${this.getKSTTime()}] 채널 ${channelId}에 메시지 전송 완료`);
-      }
+        const channels = await this.getActiveChannels();
+
+        for (const channelId of channels) {
+            await axios.post(`${process.env.MATTERMOST_SERVER_URL}/api/v4/posts`, {
+                channel_id: channelId,
+                props: {
+                    attachments: [
+                        {
+                            fallback: "알림 메시지",
+                            color: "#009d31", // github 색깔
+                            fields: message.fields,
+                            title: `${message.text}`,            
+                            author_name: "Github Review, CI/CD 실패 알림",  
+                        }
+                    ]
+                }
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${this.botToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            console.log(`[${this.getKSTTime()}] 채널 ${channelId}에 메시지 전송 완료`);
+        }
     } catch (error) {
-      console.log(`[${this.getKSTTime()}] Mattermost 메시지 전송 실패:`, error);
+        console.log(`[${this.getKSTTime()}] Mattermost 메시지 전송 실패:`, error);
     }
   }
 
