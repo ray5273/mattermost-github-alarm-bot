@@ -77,6 +77,7 @@ class MattermostNotifier {
         await this.sendMattermostMessage({ text: message, fields });
         await this.markAsNotified('pr_events', pr.id);
     }
+    console.log(`[${this.getKSTTime()}] notifyNewPRs 완료`);
   }
 
   private async notifyPRUpdates() {
@@ -124,6 +125,7 @@ class MattermostNotifier {
         await this.sendMattermostMessage({ text: message, fields });
         await this.markAsNotified('pr_events', pr.id);
     }
+    console.log(`[${this.getKSTTime()}] notifyPRUpdates 완료`);
   }
 
   private async notifyPRReviews() {
@@ -186,6 +188,7 @@ class MattermostNotifier {
         await this.sendMattermostMessage({ text: message, fields });
         await this.markAsNotified('pr_reviews', review.id);
     }
+    console.log(`[${this.getKSTTime()}] notifyPRReviews 완료`);
   }
 
   private async notifyMergedPRs() {
@@ -224,6 +227,7 @@ class MattermostNotifier {
         await this.sendMattermostMessage({ text: message, fields });
         await this.markAsNotified('pr_events', pr.id);
     }
+    console.log(`[${this.getKSTTime()}] notifyMergedPRs 완료`);
   }
 
   private async notifyFailedBuilds() {
@@ -257,6 +261,7 @@ class MattermostNotifier {
         await this.sendMattermostMessage({ text: message, fields });
         await this.markAsNotified('github_action_events', ghActions.id);
     }
+    console.log(`[${this.getKSTTime()}] notifyFailedBuilds 완료`);
   }
 
   private async getActiveChannels(): Promise<string[]> {
