@@ -1,12 +1,23 @@
 import cron from 'node-cron';
 import axios from 'axios';
+import Holidays from 'date-holidays';
 
 const CRAWLER_URL = 'http://github-crawler:3000/api/crawl';
 const NOTIFIER_URL = 'http://mattermost-notifier:3001/api/notify';
 const CRON_SCHEDULE = process.env.CRON_SCHEDULE || '0 * * * *';  // 기본값: 매일 오전 11시
 
+// Holidays 인스턴스 생성
+const hd = new Holidays('KR'); // 'KR'은 한국을 의미합니다.
 
 async function runScheduledTasks() {
+  const now = new Date();
+
+  // 오늘이 공휴일인지 확인
+  if (hd.isHoliday(now)) {
+      console.log(`[${now.toISOString()}] 오늘은 공휴일입니다. 작업을 건너뜁니다.`);
+      return; // 공휴일이면 작업을 건너뜁니다.
+  }
+
   try {
     console.log(`[${new Date().toISOString()}] Starting crawler...`);
     console.log(`[${new Date().toISOString()}] CRON_SCHEDULE is`, CRON_SCHEDULE);
