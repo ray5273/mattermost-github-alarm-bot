@@ -37,6 +37,7 @@ class GithubCrawler {
       `;
       const { rows } = await this.pool.query(lastCrawlQuery);
       const since = rows[0]?.last_crawled_at || new Date(Date.now() - 1 * 60 * 60 * 1000); // 기본값 1시간 전
+      console.log(`[${this.getKSTTime()}] [monitorAllRepositories] 마지막 크롤링 시간: ${since}`);
 
       const repoQuery = `
         SELECT owner, repo 
@@ -106,12 +107,18 @@ class GithubCrawler {
         state: 'all',
         sort: 'updated',
         direction: 'desc',
-        since: since.toISOString()
       });
+      // 마지막 크롤링 시간과 비교하여 필터링
+      const updatedPRs = pullRequests.filter((pr: PullRequest) => new Date(pr.updated_at) > since);
       
-      console.log(`[${this.getKSTTime()}] [monitorPullRequests] PR ${pullRequests.length}개 조회됨, since: ${since}`);
+      // 첫 번째 PR 출력
+      const firstPR = pullRequests[0];
+      const testDate = new Date(firstPR.updated_at);
+      console.debug(`[${this.getKSTTime()}] [monitorPullRequests] 첫 번째 PR update 시간: ${firstPR.updated_at}, since: ${since}, testDate: ${testDate}`);
 
-      for (const pr of pullRequests) {
+      console.log(`[${this.getKSTTime()}] [monitorPullRequests] PR ${updatedPRs.length}개 조회됨, since: ${since}`);
+
+      for (const pr of updatedPRs) {
         // PR 생성 이벤트 처리
         await this.handlePRCreation(pr);
         
@@ -139,10 +146,14 @@ class GithubCrawler {
       const { data: workflows } = await this.octokit.actions.listWorkflowRunsForRepo({
         owner,
         repo,
-        created: `>=${new Date(since.getTime() - 24 * 60 * 60 * 1000).toISOString()}`
       });
-      
-      for (const run of workflows.workflow_runs) {
+
+      // 예를 들어, lastCrawl 시간 기준으로 24시간 이전부터 현재까지의 실행만 선택
+      const cutoffTime = new Date(since.getTime() - 24 * 60 * 60 * 1000);
+      const filteredRuns = workflows.workflow_runs.filter((run: any) => new Date(run.created_at) >= cutoffTime);
+      console.log(`[${this.getKSTTime()}] [monitorWorkflowRuns] 워크플로우 실행 개수: ${workflows.workflow_runs.length}, 필터링된 실행 개수: ${filteredRuns.length}`);
+
+      for (const run of filteredRuns) {
         if (run.conclusion === 'failure') {
           await this.handleGithubActionFailed(run);
         }
