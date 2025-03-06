@@ -35,6 +35,7 @@ class MattermostNotifier {
       await this.notifyPRReviews();
       await this.notifyMergedPRs();
       await this.notifyFailedBuilds();
+      await this.notifyAlarmFinished();
     } catch (error) {
       console.log(`[${this.getKSTTime()}] 알림 전송 중 에러 발생:`, error);
     }
@@ -268,6 +269,33 @@ class MattermostNotifier {
         await this.markAsNotified('github_action_events', ghActions.id);
     }
     console.log(`[${this.getKSTTime()}] notifyFailedBuilds 완료`);
+  }
+
+  private async notifyAlarmFinished() {
+    console.log(`[${this.getKSTTime()}] notifyAlarmFinished 시작`);
+    try {
+      const channels = await this.getActiveChannels();
+
+      // 현재 시간을 기준으로 알람이 완료되었다는 메시지를 보냅니다.
+      // 다음 알람 시간을 메세지로 알려줍니다.
+      for (const channelId of channels) {
+          await axios.post(`${process.env.MATTERMOST_SERVER_URL}/api/v4/posts`, 
+            {
+              channel_id: channelId,
+              message: "알람이 완료되었습니다. 다음 알람은 1시간 후입니다."
+            }, 
+            {
+              headers: {
+                  'Authorization': `Bearer ${this.botToken}`,
+                  'Content-Type': 'application/json'
+              }
+            }
+        );
+          console.log(`[${this.getKSTTime()}] 채널 ${channelId}에 메시지 전송 완료`);
+      }
+  } catch (error) {
+      console.log(`[${this.getKSTTime()}] Mattermost 메시지 전송 실패:`, error);
+  }
   }
 
   private async getActiveChannels(): Promise<string[]> {
