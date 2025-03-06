@@ -216,32 +216,6 @@ class GithubCrawler {
         issue_number: pr.number
       });
 
-      // 마지막 크롤링 이후의 작성자 코멘트 찾기
-      const recentAuthorComments = comments.filter(comment => 
-        comment.user?.login === pr.user?.login &&
-        new Date(comment.created_at) > since
-      );
-      
-      // 작성자의 새로운 코멘트가 있다면 각각에 대해 이벤트 생성
-      for (const comment of recentAuthorComments) {
-        console.log(`[${this.getKSTTime()}] [handlePRUpdate] PR #${pr.number}의 작성자 코멘트 감지됨`);
-        const insertQuery = `
-          INSERT INTO pr_events (pr_id, type, title, url, updated_at, update_type, comment_id, author)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-          ON CONFLICT (pr_id, type, comment_id) DO NOTHING
-        `;
-        await this.pool.query(insertQuery, [
-          pr.id,
-          'author_comment',
-          pr.title,
-          comment.html_url,
-          comment.created_at,
-          'comment',
-          comment.id,
-          pr.user?.login
-        ]);
-      }
-
       // 최신 커밋 해시 확인
       const { data: commits } = await this.octokit.pulls.listCommits({
         owner: pr.base.repo.owner.login,
@@ -265,7 +239,7 @@ class GithubCrawler {
       
       // 커밋 해시가 다른 경우에만 새로운 이벤트 추가
       if (!rows.length || rows[0].commit_hash !== latestCommitHash) {
-        console.log(`[${this.getKSTTime()}] [handlePRUpdate] PR #${pr.number}의 새로운 코드 변경사항 감지됨`);
+        console.log(`[${this.getKSTTime()}] [handlePRUpdate] PR #${pr.number}의 새로운 코드 변경사항 감지됨`); // 여기에 몇번째인지 추가할까?
         const insertQuery = `
           INSERT INTO pr_events (pr_id, type, title, url, updated_at, update_type, commit_hash, author)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -336,9 +310,14 @@ class GithubCrawler {
           
           if (rows.length === 0) {
             console.log(`[${this.getKSTTime()}] [handlePRReviews] PR #${prNumber}의 새로운 리뷰 추가 (리뷰어: ${review.user.login})`);
+            console.log(`[${this.getKSTTime()}] [handlePRReviews] 리뷰 내용: ${review.body}`); // body가 없는 경우가 single comment임
+            if (review.state.toLowerCase() === 'commented' && review.body === '') {
+              console.log(`[${this.getKSTTime()}] [handlePRReviews] PR #${prNumber}의 Single 코멘트 추가 (리뷰어: ${review.user.login}), 건너뜀`);
+              continue;
+            }
             const query = `
-              INSERT INTO pr_reviews (review_id, pr_id, state, reviewer, submitted_at, is_author, pr_title, review_url, author)
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+              INSERT INTO pr_reviews (review_id, pr_id, state, reviewer, submitted_at, is_author, pr_title, review_url, review_content, author)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
             `;
             await this.pool.query(query, [
               review.id,
@@ -346,9 +325,10 @@ class GithubCrawler {
               review.state,
               review.user.login,
               review.submitted_at,
-              review.user.login === pr.user.login,  // PR 작성자와 리뷰어가 같으면 true
+              review.user.login === pr.user.login,
               pr.title,
               review.html_url,
+              review.body || '',
               pr.user?.login
             ]);
 

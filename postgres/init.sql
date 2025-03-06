@@ -91,7 +91,11 @@ CREATE INDEX IF NOT EXISTS idx_users_team_name ON users(team_name);
 ALTER TABLE pr_reviews ADD CONSTRAINT unique_review_id UNIQUE (review_id);
 ALTER TABLE github_action_events ADD CONSTRAINT unique_run_id UNIQUE (run_id); 
 
--- 초기 레포지토리 데이터 추가
+-- -- 초기 레포지토리 데이터 추가
+-- INSERT INTO github_repositories (owner, repo) 
+-- VALUES ('poseidonos', 'pos-essential-orchestrator')
+-- ON CONFLICT (owner, repo) DO NOTHING;
+
 INSERT INTO github_repositories (owner, repo) 
 VALUES ('ray5273', 'mattermost-github-alarm-bot')
 ON CONFLICT (owner, repo) DO NOTHING;
@@ -113,3 +117,7 @@ CREATE INDEX IF NOT EXISTS idx_mattermost_channels_team_name ON mattermost_chann
 
 INSERT INTO mattermost_channels (channel_id, team_name) 
 VALUES ('e5mz14djfif18rftxfshgdy8xr', 'firstteam');
+
+
+ALTER TABLE pr_events ADD COLUMN IF NOT EXISTS comment_content TEXT;
+ALTER TABLE pr_reviews ADD COLUMN IF NOT EXISTS review_content TEXT;

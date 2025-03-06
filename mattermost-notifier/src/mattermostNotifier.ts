@@ -93,8 +93,6 @@ class MattermostNotifier {
         let message = '';
         if (pr.update_type === 'code' && pr.notified === false) {
           message = `📝 PR 코드가 업데이트되었습니다!`;
-        } else if (pr.update_type === 'comment' && pr.notified === false) {
-          message = `💬 PR 작성자가 코멘트를 남겼습니다!`;
         } else if (pr.notified === false) {
           message = `📝 PR이 업데이트되었습니다!`; // 살짝 중복 냄새남
         } else {
@@ -151,9 +149,17 @@ class MattermostNotifier {
             emoji = '💭';
             status = 'COMMENTED';
         }
-        
-        const message = `👀 PR 리뷰가 등록되었습니다! `;
+
+        var message = `👀 PR 리뷰가 등록되었습니다! `;
+        if (review.is_author === true) {
+            message = `💬 PR 리뷰어가 코멘트를 남겼습니다!`;
+        }
         const fields = [
+            ...(review.review_content ? [{
+                title: "리뷰 내용",
+                value: review.review_content,
+                short: false
+            }] : []),
             {
                 title: "리뷰 상태",
                 value: `${emoji} ${status}`,
