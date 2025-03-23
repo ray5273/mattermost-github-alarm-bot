@@ -18,7 +18,7 @@ GITHUB_TOKEN=your_github_token
 MATTERMOST_BOT_TOKEN=your_mattermost_bot_token
 MATTERMOST_SERVER_URL=http://your_mattermost_server
 JWT_SECRET=your_jwt_secret
-CRON_SCHEDULE='* * * * *'  # 매 1분 
+CRON_SCHEDULE='0 8-18 * * 1-5'  # 매 정시 실행, 주중(월~금) 8시부터 18시까지만 실행
 ```
 
 각 환경변수 설정 방법:
