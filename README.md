@@ -56,6 +56,7 @@ CRON_SCHEDULE='0 8-18 * * 1-5'  # 매 정시 실행, 주중(월~금) 8시부터 
   - pr_reviews: PR 리뷰 정보
   - github_action_events: GitHub Actions 실행 결과
   - crawler_status: 크롤링 상태 정보
+  - mattermost_channels: Mattermost 채널 정보 (channel_type 컬럼을 통해 PR 채널과 CI/CD 채널을 구분)
 
 ### 4. API (PostgREST)
 - 데이터베이스 REST API 제공

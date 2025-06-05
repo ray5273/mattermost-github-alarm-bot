@@ -75,7 +75,7 @@ class MattermostNotifier {
                 short: false
             }
         ];
-        await this.sendMattermostMessage({ text: message, fields });
+        await this.sendMattermostMessage({ text: message, fields }, 'pr');
         await this.markAsNotified('pr_events', pr.id);
     }
     console.log(`[${this.getKSTTime()}] notifyNewPRs 완료`);
@@ -121,7 +121,7 @@ class MattermostNotifier {
                 short: false
             }
         ];
-        await this.sendMattermostMessage({ text: message, fields });
+        await this.sendMattermostMessage({ text: message, fields }, 'pr');
         await this.markAsNotified('pr_events', pr.id);
     }
     console.log(`[${this.getKSTTime()}] notifyPRUpdates 완료`);
@@ -192,7 +192,7 @@ class MattermostNotifier {
                 short: false
             }
         ];
-        await this.sendMattermostMessage({ text: message, fields });
+        await this.sendMattermostMessage({ text: message, fields }, 'pr');
         await this.markAsNotified('pr_reviews', review.id);
     }
     console.log(`[${this.getKSTTime()}] notifyPRReviews 완료`);
@@ -231,7 +231,7 @@ class MattermostNotifier {
                 short: false
             }
         ];
-        await this.sendMattermostMessage({ text: message, fields });
+        await this.sendMattermostMessage({ text: message, fields }, 'pr');
         await this.markAsNotified('pr_events', pr.id);
     }
     console.log(`[${this.getKSTTime()}] notifyMergedPRs 완료`);
@@ -265,7 +265,7 @@ class MattermostNotifier {
                 short: false
             }
         ];
-        await this.sendMattermostMessage({ text: message, fields });
+        await this.sendMattermostMessage({ text: message, fields }, 'ci');
         await this.markAsNotified('github_action_events', ghActions.id);
     }
     console.log(`[${this.getKSTTime()}] notifyFailedBuilds 완료`);
@@ -274,7 +274,7 @@ class MattermostNotifier {
   private async notifyAlarmFinished() {
     console.log(`[${this.getKSTTime()}] notifyAlarmFinished 시작`);
     try {
-      const channels = await this.getActiveChannels();
+      const channels = await this.getChannelsByType('pr');
 
       // 현재 시간을 기준으로 알람이 완료되었다는 메시지를 보냅니다.
       // 다음 알람 시간을 메세지로 알려줍니다.
@@ -298,20 +298,20 @@ class MattermostNotifier {
   }
   }
 
-  private async getActiveChannels(): Promise<string[]> {
+  private async getChannelsByType(type: string): Promise<string[]> {
     const query = `
-      SELECT channel_id 
-      FROM mattermost_channels 
-      WHERE active = true
+      SELECT channel_id
+      FROM mattermost_channels
+      WHERE active = true AND channel_type = $1
     `;
-    const { rows } = await this.pool.query(query);
+    const { rows } = await this.pool.query(query, [type]);
     return rows.map((row: { channel_id: string }) => row.channel_id);
   }
 
-  private async sendMattermostMessage(message: { text: string; fields: Array<{ title: string; value: string; short: boolean }> }) {
+  private async sendMattermostMessage(message: { text: string; fields: Array<{ title: string; value: string; short: boolean }> }, type: string = 'pr') {
     console.log(`[${this.getKSTTime()}] sendMattermostMessage 시작`);
     try {
-        const channels = await this.getActiveChannels();
+        const channels = await this.getChannelsByType(type);
 
         for (const channelId of channels) {
             await axios.post(`${process.env.MATTERMOST_SERVER_URL}/api/v4/posts`, {

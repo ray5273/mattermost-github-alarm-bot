@@ -108,15 +108,17 @@ CREATE TABLE IF NOT EXISTS mattermost_channels (
     id SERIAL PRIMARY KEY,
     channel_id VARCHAR(100) NOT NULL,
     team_name VARCHAR(100) NOT NULL,
+    channel_type VARCHAR(20) NOT NULL DEFAULT 'pr',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     active BOOLEAN DEFAULT true,
     UNIQUE(channel_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_mattermost_channels_team_name ON mattermost_channels(team_name);
+CREATE INDEX IF NOT EXISTS idx_mattermost_channels_channel_type ON mattermost_channels(channel_type);
 
-INSERT INTO mattermost_channels (channel_id, team_name) 
-VALUES ('e5mz14djfif18rftxfshgdy8xr', 'firstteam');
+INSERT INTO mattermost_channels (channel_id, team_name, channel_type)
+VALUES ('e5mz14djfif18rftxfshgdy8xr', 'firstteam', 'pr');
 
 
 ALTER TABLE pr_events ADD COLUMN IF NOT EXISTS comment_content TEXT;
