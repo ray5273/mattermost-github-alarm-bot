@@ -83,6 +83,9 @@ CRON_SCHEDULE='0 8-18 * * 1-5'  # 매 정시 실행, 주중(월~금) 8시부터 
 # 프로젝트 실행
 docker-compose up -d
 
+# DB 초기화 또는 스키마 변경 적용
+docker-compose run --rm db-init
+
 # 로그 확인
 docker-compose logs -f
 
