@@ -20,6 +20,21 @@ services:
       timeout: 5s
       retries: 5
 
+  db-init:
+    image: postgres:latest
+    env_file:
+      - .env
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./postgres/init.sql:/init.sql
+    entrypoint: /bin/sh
+    command: -c "psql -h postgres -U $POSTGRES_USER -d $POSTGRES_DB -f /init.sql"
+    restart: 'no'
+
   postgrest:
     container_name: postgrest
     image: postgrest/postgrest:latest
