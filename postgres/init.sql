@@ -115,10 +115,14 @@ CREATE TABLE IF NOT EXISTS mattermost_channels (
 );
 
 CREATE INDEX IF NOT EXISTS idx_mattermost_channels_team_name ON mattermost_channels(team_name);
-CREATE INDEX IF NOT EXISTS idx_mattermost_channels_channel_type ON mattermost_channels(channel_type);
+
 
 INSERT INTO mattermost_channels (channel_id, team_name, channel_type)
 VALUES ('e5mz14djfif18rftxfshgdy8xr', 'firstteam', 'pr');
+
+ALTER TABLE mattermost_channels
+  ADD COLUMN IF NOT EXISTS channel_type VARCHAR(20) NOT NULL DEFAULT 'pr';
+CREATE INDEX IF NOT EXISTS idx_mattermost_channels_channel_type ON mattermost_channels(channel_type);
 
 
 ALTER TABLE pr_events ADD COLUMN IF NOT EXISTS comment_content TEXT;
