@@ -153,9 +153,19 @@ class GithubCrawler {
       const filteredRuns = workflows.workflow_runs.filter((run: any) => new Date(run.created_at) >= cutoffTime);
       console.log(`[${this.getKSTTime()}] [monitorWorkflowRuns] 워크플로우 실행 개수: ${workflows.workflow_runs.length}, 필터링된 실행 개수: ${filteredRuns.length}`);
 
+      const latestRuns: Record<string, any> = {};
       for (const run of filteredRuns) {
+        const key = `${run.workflow_id}-${run.head_branch}`;
+        if (!latestRuns[key] || new Date(run.created_at) > new Date(latestRuns[key].created_at)) {
+          latestRuns[key] = run;
+        }
+      }
+
+      for (const run of Object.values(latestRuns)) {
         if (run.conclusion === 'failure') {
           await this.handleGithubActionFailed(run);
+        } else {
+          console.log(`[${this.getKSTTime()}] [monitorWorkflowRuns] 최신 실행 ${run.id} 성공, 이전 실패 무시`);
         }
       }
     } catch (error) {
