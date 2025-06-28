@@ -72,7 +72,8 @@ This project consists of the following components:
    - 🎉 PR merged
 
 2. GitHub Actions Notifications:
-   - ❌ CI/CD build failed
+ - ❌ CI/CD build failed
+    - Only the latest workflow result for each PR is considered. If a newer run succeeds, previous failures are ignored.
 
 ## Usage
 ```bash
